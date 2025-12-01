@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+        
+    - name: Restore dependencies
+      run: dotnet restore backend/src/Asisya.Api/Asisya.Api.csproj
+      
+    - name: Build
+      run: dotnet build backend/src/Asisya.Api/Asisya.Api.csproj --no-restore
+      
+    - name: Test
+      run: dotnet test backend/Asisya.Tests/Asisya.Tests.csproj --no-build --verbosity normal
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Docker image
+      run: docker build -t asisya-api .
+      
+    - name: Test Docker image
+      run: docker run --rm asisya-api echo "Docker build successful"
